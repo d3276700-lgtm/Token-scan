@@ -488,8 +488,15 @@ async function analyze() {
   const netLabel = NETWORKS.find(n => n.id===selectedNet)?.label || selectedNet;
   const userPrompt = `Проанализируй токен с адресом: ${addr}\nСеть: ${netLabel==="Авто"?"определи автоматически по формату адреса":netLabel}\n\nИщи данные на DexScreener, GoPlus, Token Sniffer, Etherscan/Solscan и верни JSON-анализ.`;
 
-  try {
-    const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+  const FREE_MODELS = [
+    "mistralai/mistral-7b-instruct:free",
+    "google/gemma-2-9b-it:free", 
+    "qwen/qwen-2-7b-instruct:free",
+    "meta-llama/llama-3.2-3b-instruct:free"
+  ];
+
+  async function tryModel(model, prompt) {
+    const r = await fetch("https://openrouter.ai/api/v1/chat/completions", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -498,17 +505,25 @@ async function analyze() {
         "X-Title": "TOKEN_SCAN"
       },
       body: JSON.stringify({
-        model: "meta-llama/llama-3.1-8b-instruct:free",
+        model: model,
         messages: [
           { role: "system", content: SYSTEM_PROMPT },
-          { role: "user", content: userPrompt }
+          { role: "user", content: prompt }
         ],
         temperature: 0.1,
         max_tokens: 4000
       })
     });
+    return r.json();
+  }
 
-    const json = await res.json();
+  try {
+    let json = null;
+    for (const model of FREE_MODELS) {
+      msgEl.textContent = `Пробую модель ${model.split("/")[1].split(":")[0]}...`;
+      json = await tryModel(model, userPrompt);
+      if (!json.error || !json.error.message.includes("No endpoints")) break;
+    }
 
     if (json.error) {
       throw new Error(json.error.message || "Ошибка OpenRouter API");
