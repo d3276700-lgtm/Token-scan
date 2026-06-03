@@ -92,7 +92,7 @@
     <div class="logo">
       <span class="logo-text" style="font-family:'Space Mono',monospace">TOKEN<span class="logo-dim">_</span>SCAN</span>
       <span class="logo-tag">v3.0</span>
-      <span class="gemini-badge">✦ OpenRouter AI</span>
+      <span class="gemini-badge">✦ Groq AI</span>
     </div>
     <p class="sub">Полный AI-анализ безопасности токена · Бесплатно</p>
   </div>
@@ -100,12 +100,12 @@
   <!-- Key setup -->
   <div id="keySetupBlock" class="pad" style="margin-bottom:16px">
     <div class="card" style="border-color:rgba(66,133,244,0.2);background:rgba(66,133,244,0.05)">
-      <div class="card-title" style="color:rgba(66,133,244,0.7)">🔑 Настройка OpenRouter API (бесплатно)</div>
+      <div class="card-title" style="color:rgba(66,133,244,0.7)">🔑 Настройка Groq API (бесплатно)</div>
       <ul class="step-list">
-        <li>Зайди на <a href="https://openrouter.ai" target="_blank">openrouter.ai</a></li>
-        <li>Нажми <strong>Sign In</strong> → войди через Google</li>
-        <li>Сверху нажми <strong>Keys → Create Key</strong></li>
-        <li>Скопируй ключ (начинается с <code style="color:#4285f4">sk-or-...</code>)</li>
+        <li>Зайди на <a href="https://console.groq.com" target="_blank">console.groq.com</a></li>
+        <li>Нажми <strong>Sign Up</strong> → войди через Google</li>
+        <li>Слева нажми <strong>API Keys → Create API Key</strong></li>
+        <li>Скопируй ключ (начинается с <code style="color:#4285f4">gsk_...</code>)</li>
         <li>Вставь ниже и нажми <strong>Сохранить</strong></li>
       </ul>
     </div>
@@ -113,7 +113,7 @@
 
   <!-- API Key input -->
   <div class="key-wrap">
-    <input class="ta-input" id="apiKeyInput" placeholder="sk-or-... (OpenRouter API Key)" type="password" autocomplete="off">
+    <input class="ta-input" id="apiKeyInput" placeholder="gsk_... (Groq API Key)" type="password" autocomplete="off">
     <button class="save-btn" onclick="saveKey()">Сохранить</button>
   </div>
   <div class="key-status" id="keyStatus"></div>
@@ -139,7 +139,7 @@
     <div id="results" class="hidden fade-in"></div>
     <div id="placeholder" class="placeholder">
       <div class="placeholder-icon">⬡</div>
-      <div class="placeholder-text">Введи OpenRouter API ключ, затем адрес токена.<br>AI сделает полный разбор бесплатно.</div>
+      <div class="placeholder-text">Введи Groq API ключ, затем адрес токена.<br>AI сделает полный разбор бесплатно.</div>
     </div>
   </div>
 </div>
@@ -223,7 +223,7 @@ RAW JSON ONLY.`;
 
 let selectedNet = "auto";
 let loadingInterval = null;
-let apiKey = localStorage.getItem("openrouter_api_key") || "";
+let apiKey = localStorage.getItem("groq_api_key") || "";
 
 // Build network buttons
 const netContainer = document.getElementById("networks");
@@ -247,7 +247,7 @@ function saveKey() {
   const val = document.getElementById("apiKeyInput").value.trim();
   if (!val) return;
   apiKey = val;
-  localStorage.setItem("openrouter_api_key", val);
+  localStorage.setItem("groq_api_key", val);
   document.getElementById("apiKeyInput").value = "";
   setKeyStatus("✓ API ключ сохранён — можно анализировать!", "#22c55e");
   document.getElementById("keySetupBlock").classList.add("hidden");
@@ -261,10 +261,10 @@ function setKeyStatus(msg, color) {
 
 window.addEventListener("DOMContentLoaded", () => {
   if (apiKey) {
-    setKeyStatus("✓ OpenRouter API ключ загружен · готов к работе", "#22c55e");
+    setKeyStatus("✓ Groq API ключ загружен · готов к работе", "#22c55e");
     document.getElementById("keySetupBlock").classList.add("hidden");
   } else {
-    setKeyStatus("Введи API ключ с openrouter.ai", "rgba(255,255,255,0.3)");
+    setKeyStatus("Введи API ключ с console.groq.com", "rgba(255,255,255,0.3)");
   }
 });
 
@@ -456,7 +456,7 @@ function renderResults(d) {
   }
 
   if (d.dataSource) html += `<div class="foot-note">Источники: ${d.dataSource}${d.dataFreshness?" · "+d.dataFreshness:""}</div>`;
-  html += `<div class="foot-note" style="margin-top:4px">✦ Анализ выполнен OpenRouter AI · Не является финансовой рекомендацией</div>`;
+  html += `<div class="foot-note" style="margin-top:4px">✦ Анализ выполнен Groq AI · Не является финансовой рекомендацией</div>`;
   return html;
 }
 
@@ -465,7 +465,7 @@ async function analyze() {
   if (!addr) return;
 
   if (!apiKey) {
-    document.getElementById("errorText").innerHTML = "⚠️ Введи OpenRouter API ключ выше.<br>Получить бесплатно: <a href='https://openrouter.ai' target='_blank'>openrouter.ai</a>";
+    document.getElementById("errorText").innerHTML = "⚠️ Введи OpenRouter API ключ выше.<br>Получить бесплатно: <a href='https://console.groq.com' target='_blank'>console.groq.com</a>";
     document.getElementById("errorBlock").classList.remove("hidden");
     return;
   }
@@ -488,52 +488,33 @@ async function analyze() {
   const netLabel = NETWORKS.find(n => n.id===selectedNet)?.label || selectedNet;
   const userPrompt = `Проанализируй токен с адресом: ${addr}\nСеть: ${netLabel==="Авто"?"определи автоматически по формату адреса":netLabel}\n\nИщи данные на DexScreener, GoPlus, Token Sniffer, Etherscan/Solscan и верни JSON-анализ.`;
 
-  const FREE_MODELS = [
-    "mistralai/mistral-7b-instruct:free",
-    "google/gemma-2-9b-it:free", 
-    "qwen/qwen-2-7b-instruct:free",
-    "meta-llama/llama-3.2-3b-instruct:free"
-  ];
 
-  async function tryModel(model, prompt) {
-    const r = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+
+  try {
+    const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "Authorization": `Bearer ${apiKey}`,
-        "HTTP-Referer": "https://token-scan-pi.vercel.app",
-        "X-Title": "TOKEN_SCAN"
+        "Authorization": `Bearer ${apiKey}`
       },
       body: JSON.stringify({
-        model: model,
+        model: "llama-3.1-8b-instant",
         messages: [
           { role: "system", content: SYSTEM_PROMPT },
-          { role: "user", content: prompt }
+          { role: "user", content: userPrompt }
         ],
         temperature: 0.1,
         max_tokens: 4000
       })
     });
-    return r.json();
-  }
 
-  try {
-    let json = null;
-    for (const model of FREE_MODELS) {
-      msgEl.textContent = `Пробую модель ${model.split("/")[1].split(":")[0]}...`;
-      json = await tryModel(model, userPrompt);
-      if (!json.error || !json.error.message.includes("No endpoints")) break;
-    }
+    const json = await res.json();
 
     if (json.error) {
-      throw new Error(json.error.message || "Ошибка OpenRouter API");
+      throw new Error(json.error.message || "Ошибка Groq API");
     }
 
-    let raw = "";
-    const parts = [json.choices?.[0]?.message];
-    for (const p of parts) {
-      if (p?.content) raw += p.content;
-    }
+    let raw = json.choices?.[0]?.message?.content || "";
     raw = raw.replace(/```json|```/g,"").trim();
 
     // Extract JSON from response
@@ -557,7 +538,7 @@ async function analyze() {
     document.getElementById("loadingBlock").classList.add("hidden");
     let msg = "⚠️ Ошибка: " + e.message;
     if (e.message.includes("API_KEY") || e.message.includes("401") || e.message.includes("auth")) {
-      msg = "⚠️ Неверный API ключ. Проверь ключ на openrouter.ai";
+      msg = "⚠️ Неверный API ключ. Проверь ключ на console.groq.com";
     }
     document.getElementById("errorText").innerHTML = msg;
     document.getElementById("errorBlock").classList.remove("hidden");
