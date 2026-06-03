@@ -1,0 +1,550 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TOKEN_SCAN — AI анализ токенов</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: #0a0a0f; color: #fff; font-family: 'DM Sans', sans-serif; min-height: 100vh; }
+  .app { max-width: 560px; margin: 0 auto; padding: 0 0 60px; }
+  .header { padding: 32px 24px 0; margin-bottom: 20px; }
+  .logo { display: flex; align-items: baseline; gap: 10px; margin-bottom: 5px; }
+  .logo-text { font-family: 'Space Mono', monospace; font-size: 22px; font-weight: 700; }
+  .logo-dim { color: rgba(255,255,255,0.2); }
+  .logo-tag { font-size: 10px; color: rgba(255,255,255,0.25); letter-spacing: 0.15em; text-transform: uppercase; }
+  .sub { font-size: 12px; color: rgba(255,255,255,0.3); }
+
+  .networks { padding: 0 24px; margin-bottom: 12px; display: flex; gap: 6px; flex-wrap: wrap; }
+  .net-btn { background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); border-radius: 7px; color: rgba(255,255,255,0.5); font-size: 12px; padding: 6px 10px; cursor: pointer; transition: all 0.15s; }
+  .net-btn:hover { border-color: rgba(255,255,255,0.2); color: rgba(255,255,255,0.8); }
+  .net-btn.active { background: rgba(255,255,255,0.1); border-color: rgba(255,255,255,0.3); color: #fff; }
+
+  .key-wrap { padding: 0 24px; margin-bottom: 6px; display: flex; gap: 8px; }
+  .search-wrap { padding: 0 24px; margin-bottom: 16px; display: flex; gap: 8px; }
+  .ta-input { flex: 1; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.1); border-radius: 10px; color: #fff; font-family: 'Space Mono', monospace; font-size: 13px; padding: 12px 16px; outline: none; transition: border-color 0.2s; }
+  .ta-input:focus { border-color: rgba(255,255,255,0.3); }
+  .ta-input::placeholder { color: rgba(255,255,255,0.18); }
+  .ta-btn { background: #fff; color: #000; border: none; border-radius: 10px; font-weight: 600; font-size: 14px; padding: 12px 22px; cursor: pointer; transition: opacity 0.2s, transform 0.1s; white-space: nowrap; }
+  .ta-btn:hover:not(:disabled) { opacity: 0.85; }
+  .ta-btn:active:not(:disabled) { transform: scale(0.97); }
+  .ta-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+  .save-btn { background: rgba(255,255,255,0.1); color: #fff; border: 1px solid rgba(255,255,255,0.15); border-radius: 10px; font-size: 13px; font-weight: 500; padding: 12px 16px; cursor: pointer; white-space: nowrap; transition: background 0.15s; }
+  .save-btn:hover { background: rgba(255,255,255,0.16); }
+  .key-status { padding: 0 24px; margin-bottom: 14px; font-size: 11px; color: rgba(255,255,255,0.28); min-height: 16px; }
+
+  .pad { padding: 0 24px; }
+  .card { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.07); border-radius: 14px; padding: 18px 20px; margin-bottom: 12px; }
+  .card-title { font-size: 10px; color: rgba(255,255,255,0.3); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 12px; font-weight: 500; }
+  .g2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 10px; }
+  .g3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 12px; }
+  .pill { border-radius: 8px; padding: 9px 12px; display: flex; flex-direction: column; gap: 3px; }
+  .pill-label { font-size: 10px; color: rgba(255,255,255,0.35); text-transform: uppercase; letter-spacing: 0.06em; }
+  .pill-val { font-size: 13px; font-weight: 600; font-family: 'Space Mono', monospace; }
+  .check-row { display: flex; gap: 10px; padding: 9px 0; border-bottom: 1px solid rgba(255,255,255,0.05); }
+  .check-row:last-child { border-bottom: none; }
+  .check-icon { font-family: 'Space Mono', monospace; font-size: 13px; font-weight: 700; flex-shrink: 0; width: 16px; margin-top: 1px; }
+  .check-title { font-size: 13px; color: rgba(255,255,255,0.88); font-weight: 500; }
+  .check-desc { font-size: 11px; color: rgba(255,255,255,0.35); margin-top: 2px; line-height: 1.5; }
+  .risk-row { display: flex; gap: 10px; padding: 10px 12px; border-radius: 10px; margin-bottom: 8px; border-left: 3px solid; }
+  .risk-row:last-child { margin-bottom: 0; }
+  .risk-title { font-size: 13px; font-weight: 500; color: rgba(255,255,255,0.9); }
+  .risk-desc { font-size: 11px; color: rgba(255,255,255,0.4); margin-top: 2px; line-height: 1.5; }
+  .bar-wrap { margin-bottom: 10px; }
+  .bar-header { display: flex; justify-content: space-between; font-size: 11px; color: rgba(255,255,255,0.45); margin-bottom: 5px; }
+  .bar-track { height: 5px; border-radius: 3px; background: rgba(255,255,255,0.07); overflow: hidden; }
+  .bar-fill { height: 100%; border-radius: 3px; transition: width 0.8s ease; }
+  .holder-row { display: flex; justify-content: space-between; align-items: center; padding: 7px 0; border-bottom: 1px solid rgba(255,255,255,0.05); }
+  .holder-row:last-child { border-bottom: none; }
+  .score-wrap { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+  .tok-header { display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 16px; }
+  .soc-link { font-size: 12px; color: rgba(255,255,255,0.5); text-decoration: none; background: rgba(255,255,255,0.05); padding: 5px 11px; border-radius: 7px; }
+  .soc-link:hover { background: rgba(255,255,255,0.09); }
+  .loading-card { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.07); border-radius: 14px; padding: 28px 20px; text-align: center; }
+  .scan-track { overflow: hidden; height: 2px; background: rgba(255,255,255,0.06); border-radius: 1px; margin-bottom: 22px; position: relative; }
+  .scan-beam { position: absolute; top: 0; left: 0; width: 30%; height: 100%; background: rgba(255,255,255,0.45); border-radius: 1px; animation: scan 1.8s linear infinite; }
+  @keyframes scan { 0%{transform:translateX(-100%)} 100%{transform:translateX(450%)} }
+  .loading-msg { font-family: 'Space Mono', monospace; font-size: 12px; color: rgba(255,255,255,0.45); letter-spacing: 0.05em; animation: blink 1.4s ease-in-out infinite; }
+  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.4} }
+  .loading-hint { font-size: 11px; color: rgba(255,255,255,0.18); margin-top: 8px; }
+  .error-card { background: rgba(239,68,68,0.07); border: 1px solid rgba(239,68,68,0.2); border-radius: 14px; padding: 16px 18px; }
+  .error-text { font-size: 13px; color: #ef4444; line-height: 1.6; }
+  .placeholder { padding: 30px 24px; text-align: center; }
+  .placeholder-icon { font-size: 34px; opacity: 0.1; margin-bottom: 14px; }
+  .placeholder-text { font-size: 12px; color: rgba(255,255,255,0.18); line-height: 1.8; }
+  .fade-in { animation: fadeIn 0.35s ease; }
+  @keyframes fadeIn { from{opacity:0;transform:translateY(7px)} to{opacity:1;transform:translateY(0)} }
+  .foot-note { font-size: 10px; color: rgba(255,255,255,0.13); text-align: center; margin-top: 6px; }
+  .hidden { display: none !important; }
+  .gemini-badge { display: inline-flex; align-items: center; gap: 5px; background: rgba(66,133,244,0.12); border: 1px solid rgba(66,133,244,0.25); border-radius: 6px; padding: 3px 9px; font-size: 10px; color: rgba(66,133,244,0.9); margin-left: 8px; }
+  .step-list { list-style: none; counter-reset: steps; }
+  .step-list li { counter-increment: steps; display: flex; gap: 10px; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.05); font-size: 13px; color: rgba(255,255,255,0.7); line-height: 1.5; }
+  .step-list li::before { content: counter(steps); background: rgba(66,133,244,0.2); color: #4285f4; border-radius: 50%; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; flex-shrink: 0; margin-top: 1px; }
+  .step-list li:last-child { border-bottom: none; }
+  a { color: #4285f4; }
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="header">
+    <div class="logo">
+      <span class="logo-text" style="font-family:'Space Mono',monospace">TOKEN<span class="logo-dim">_</span>SCAN</span>
+      <span class="logo-tag">v3.0</span>
+      <span class="gemini-badge">✦ Gemini AI</span>
+    </div>
+    <p class="sub">Полный AI-анализ безопасности токена · Бесплатно</p>
+  </div>
+
+  <!-- Key setup -->
+  <div id="keySetupBlock" class="pad" style="margin-bottom:16px">
+    <div class="card" style="border-color:rgba(66,133,244,0.2);background:rgba(66,133,244,0.05)">
+      <div class="card-title" style="color:rgba(66,133,244,0.7)">🔑 Настройка Google Gemini API (бесплатно)</div>
+      <ul class="step-list">
+        <li>Зайди на <a href="https://aistudio.google.com" target="_blank">aistudio.google.com</a></li>
+        <li>Войди через Google аккаунт</li>
+        <li>Нажми <strong>Get API Key → Create API key</strong></li>
+        <li>Скопируй ключ (начинается с <code style="color:#4285f4">AIzaSy...</code>)</li>
+        <li>Вставь ниже и нажми <strong>Сохранить</strong></li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- API Key input -->
+  <div class="key-wrap">
+    <input class="ta-input" id="apiKeyInput" placeholder="AIzaSy... (Google Gemini API Key)" type="password" autocomplete="off">
+    <button class="save-btn" onclick="saveKey()">Сохранить</button>
+  </div>
+  <div class="key-status" id="keyStatus"></div>
+
+  <!-- Networks -->
+  <div class="networks" id="networks"></div>
+
+  <!-- Search -->
+  <div class="search-wrap">
+    <input class="ta-input" id="addrInput" placeholder="0x... или адрес Solana" autocomplete="off" spellcheck="false">
+    <button class="ta-btn" id="analyzeBtn" onclick="analyze()">Анализ</button>
+  </div>
+
+  <div class="pad">
+    <div id="loadingBlock" class="loading-card hidden">
+      <div class="scan-track"><div class="scan-beam"></div></div>
+      <div class="loading-msg" id="loadingMsg">Запрашиваю данные...</div>
+      <div class="loading-hint">AI анализирует токен · займёт 15–30 сек</div>
+    </div>
+    <div id="errorBlock" class="error-card hidden">
+      <div class="error-text" id="errorText"></div>
+    </div>
+    <div id="results" class="hidden fade-in"></div>
+    <div id="placeholder" class="placeholder">
+      <div class="placeholder-icon">⬡</div>
+      <div class="placeholder-text">Введи Gemini API ключ, затем адрес токена.<br>AI найдёт данные и сделает полный разбор бесплатно.</div>
+    </div>
+  </div>
+</div>
+
+<script>
+const NETWORKS = [
+  { id:"auto", label:"Авто", icon:"🔍" },
+  { id:"ethereum", label:"Ethereum", icon:"⟠" },
+  { id:"base", label:"Base", icon:"🔵" },
+  { id:"bsc", label:"BNB Chain", icon:"🟡" },
+  { id:"solana", label:"Solana", icon:"◎" },
+  { id:"polygon", label:"Polygon", icon:"⬡" },
+  { id:"arbitrum", label:"Arbitrum", icon:"🔷" },
+  { id:"avalanche", label:"Avalanche", icon:"🔺" },
+  { id:"optimism", label:"Optimism", icon:"🔴" },
+];
+
+const LOADING_MSGS = [
+  "Определяю сеть...",
+  "Ищу токен на DexScreener...",
+  "Проверяю GoPlus Security...",
+  "Анализирую Token Sniffer...",
+  "Проверяю контракт...",
+  "Анализирую холдеров...",
+  "Проверяю ликвидность...",
+  "Сканирую паттерны торговли...",
+  "Gemini AI обрабатывает данные...",
+  "Формирую отчёт...",
+];
+
+const SYSTEM_PROMPT = `You are a professional crypto token security analyst. Analyze the given token address and network by searching for real data from DexScreener, GoPlus Security, Token Sniffer, Etherscan/BSCScan/BaseScan/Solscan, and social sources.
+
+Return ONLY raw JSON (no markdown, no backticks, no text before or after):
+
+{
+  "token": {
+    "name": "string", "symbol": "string", "address": "string", "network": "string",
+    "price": "string or null", "marketCap": "string or null", "volume24h": "string or null",
+    "holders": number_or_null, "totalSupply": "string or null", "age": "string or null"
+  },
+  "contract": {
+    "verified": true_false_or_null, "hasProxy": true_false_or_null,
+    "hasMintFunction": true_false_or_null, "isHoneypot": true_false_or_null,
+    "buyTax": "string or null", "sellTax": "string or null",
+    "hasBlacklist": true_false_or_null, "selfDestructable": true_false_or_null,
+    "ownerHoldings": "string or null", "creatorHoldings": "string or null"
+  },
+  "liquidity": {
+    "totalUSD": "string or null", "lpLocked": "string or null",
+    "lpLockedPercent": number_or_null, "lpProviders": number_or_null,
+    "mainDex": "string or null", "rugPullRisk": "low/medium/high/critical"
+  },
+  "holders": {
+    "top1Percent": number_or_null, "top10Percent": number_or_null,
+    "burnedPercent": number_or_null,
+    "top10List": [{"address": "short", "percent": number, "label": "string or null"}],
+    "concentrationRisk": "low/medium/high/critical"
+  },
+  "trading": {
+    "washTradingDetected": true_false_or_null, "volumeToMcapRatio": number_or_null,
+    "suspiciousPatterns": ["string"]
+  },
+  "social": {
+    "twitter": "url or null", "website": "url or null", "telegram": "url or null",
+    "recentNews": ["string"], "sentiment": "positive/neutral/negative/mixed/unknown"
+  },
+  "risks": [
+    {"level": "critical/high/medium/low/ok", "title": "string in Russian", "description": "string in Russian"}
+  ],
+  "verdict": {
+    "score": number_0_to_100,
+    "label": "string in Russian",
+    "summary": "2-3 sentences in Russian",
+    "recommendation": "avoid/caution/neutral/ok"
+  },
+  "dataSource": "string", "dataFreshness": "string"
+}
+
+If not found: {"error": "explanation in Russian"}
+RAW JSON ONLY.`;
+
+let selectedNet = "auto";
+let loadingInterval = null;
+let apiKey = localStorage.getItem("gemini_api_key") || "";
+
+// Build network buttons
+const netContainer = document.getElementById("networks");
+NETWORKS.forEach(n => {
+  const btn = document.createElement("button");
+  btn.className = "net-btn" + (n.id === "auto" ? " active" : "");
+  btn.textContent = n.icon + " " + n.label;
+  btn.onclick = () => {
+    selectedNet = n.id;
+    document.querySelectorAll(".net-btn").forEach(b => b.classList.remove("active"));
+    btn.classList.add("active");
+  };
+  netContainer.appendChild(btn);
+});
+
+document.getElementById("addrInput").addEventListener("keydown", e => {
+  if (e.key === "Enter") analyze();
+});
+
+function saveKey() {
+  const val = document.getElementById("apiKeyInput").value.trim();
+  if (!val) return;
+  apiKey = val;
+  localStorage.setItem("gemini_api_key", val);
+  document.getElementById("apiKeyInput").value = "";
+  setKeyStatus("✓ API ключ сохранён — можно анализировать!", "#22c55e");
+  document.getElementById("keySetupBlock").classList.add("hidden");
+}
+
+function setKeyStatus(msg, color) {
+  const el = document.getElementById("keyStatus");
+  el.textContent = msg;
+  el.style.color = color;
+}
+
+window.addEventListener("DOMContentLoaded", () => {
+  if (apiKey) {
+    setKeyStatus("✓ Gemini API ключ загружен · готов к работе", "#22c55e");
+    document.getElementById("keySetupBlock").classList.add("hidden");
+  } else {
+    setKeyStatus("Введи API ключ с aistudio.google.com", "rgba(255,255,255,0.3)");
+  }
+});
+
+function getRiskColor(l) { return {critical:"#ef4444",high:"#f97316",medium:"#eab308",low:"#3b82f6",ok:"#22c55e"}[l]||"#6b7280"; }
+function getRiskIcon(l) { return {critical:"🚨",high:"🔴",medium:"🟡",low:"🔵",ok:"✅"}[l]||"⚪"; }
+function scoreColor(s) { return s>=70?"#22c55e":s>=45?"#eab308":s>=25?"#f97316":"#ef4444"; }
+function scoreLabel(s) { return s>=70?"Безопасен":s>=45?"Осторожно":s>=25?"Высокий риск":"Опасен"; }
+function pillColor(ok) {
+  if (ok===true) return {color:"#22c55e",bg:"rgba(34,197,94,0.1)",border:"rgba(34,197,94,0.2)"};
+  if (ok===false) return {color:"#ef4444",bg:"rgba(239,68,68,0.1)",border:"rgba(239,68,68,0.2)"};
+  if (ok==="warn") return {color:"#eab308",bg:"rgba(234,179,8,0.1)",border:"rgba(234,179,8,0.2)"};
+  return {color:"rgba(255,255,255,0.6)",bg:"rgba(255,255,255,0.05)",border:"rgba(255,255,255,0.08)"};
+}
+
+function makePill(label, value, ok) {
+  const c = pillColor(ok);
+  return `<div class="pill" style="background:${c.bg};border:1px solid ${c.border}">
+    <span class="pill-label">${label}</span>
+    <span class="pill-val" style="color:${c.color}">${value}</span>
+  </div>`;
+}
+
+function makeCheck(ok, title, desc) {
+  const icon = ok===true?"✓":ok===false?"✗":"~";
+  const color = ok===true?"#22c55e":ok===false?"#ef4444":"#eab308";
+  return `<div class="check-row">
+    <span class="check-icon" style="color:${color}">${icon}</span>
+    <div><div class="check-title">${title}</div>${desc?`<div class="check-desc">${desc}</div>`:""}</div>
+  </div>`;
+}
+
+function makeBar(label, value, color) {
+  return `<div class="bar-wrap">
+    <div class="bar-header"><span>${label}</span><span style="color:${color};font-weight:600">${value}%</span></div>
+    <div class="bar-track"><div class="bar-fill" style="width:${Math.min(100,value)}%;background:${color}"></div></div>
+  </div>`;
+}
+
+function makeScoreRing(score) {
+  const r=36, circ=2*Math.PI*r, fill=(score/100)*circ, c=scoreColor(score);
+  return `<div class="score-wrap">
+    <svg width="92" height="92" viewBox="0 0 92 92">
+      <circle cx="46" cy="46" r="${r}" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="7"/>
+      <circle cx="46" cy="46" r="${r}" fill="none" stroke="${c}" stroke-width="7"
+        stroke-dasharray="${fill} ${circ}" stroke-linecap="round" transform="rotate(-90 46 46)"/>
+      <text x="46" y="43" text-anchor="middle" fill="${c}" font-size="20" font-weight="700" font-family="'Space Mono',monospace">${score}</text>
+      <text x="46" y="57" text-anchor="middle" fill="rgba(255,255,255,0.35)" font-size="9" font-family="'DM Sans',sans-serif">/100</text>
+    </svg>
+    <span style="font-size:11px;color:${c};font-weight:600;letter-spacing:0.05em">${scoreLabel(score)}</span>
+  </div>`;
+}
+
+function renderResults(d) {
+  const sc = d.verdict?.score;
+  const scolor = sc!=null ? scoreColor(sc) : "#6b7280";
+  let html = "";
+
+  // Token header
+  html += `<div class="card tok-header">
+    <div>
+      <div><span style="font-family:'Space Mono',monospace;font-size:20px;font-weight:700">${d.token?.symbol||"?"}</span>
+      <span style="font-size:13px;color:rgba(255,255,255,0.3);margin-left:8px">${d.token?.name||""}</span></div>
+      <div style="font-size:11px;color:rgba(255,255,255,0.25);margin-top:5px;font-family:'Space Mono',monospace">${d.token?.network||""} · ${d.token?.address?d.token.address.slice(0,10)+"..."+d.token.address.slice(-6):""}</div>
+      <div style="display:flex;gap:10px;margin-top:10px;flex-wrap:wrap;align-items:center">
+        ${d.token?.price?`<span style="font-family:'Space Mono',monospace;font-size:14px">${d.token.price}</span>`:""}
+        ${d.token?.marketCap?`<span style="font-size:12px;color:rgba(255,255,255,0.35)">MCap: ${d.token.marketCap}</span>`:""}
+        ${d.token?.volume24h?`<span style="font-size:12px;color:rgba(255,255,255,0.35)">Vol 24h: ${d.token.volume24h}</span>`:""}
+        ${d.token?.age?`<span style="font-size:12px;color:rgba(255,255,255,0.3)">Возраст: ${d.token.age}</span>`:""}
+      </div>
+    </div>
+    ${sc!=null?makeScoreRing(sc):""}
+  </div>`;
+
+  // Verdict
+  if (d.verdict) {
+    html += `<div class="card" style="border-color:${scolor}33;background:${scolor}0d">
+      <div style="font-size:15px;font-weight:600;color:${scolor};margin-bottom:6px">${d.verdict.label}</div>
+      <div style="font-size:13px;color:rgba(255,255,255,0.6);line-height:1.7">${d.verdict.summary}</div>
+    </div>`;
+  }
+
+  // Key metrics
+  const buyOk = ["0%","0","0.0%"].includes(d.contract?.buyTax) ? true : d.contract?.buyTax!=null ? false : null;
+  const sellOk = ["0%","0","0.0%"].includes(d.contract?.sellTax) ? true : d.contract?.sellTax!=null ? false : null;
+  const lpP = d.liquidity?.lpLockedPercent;
+  const lpOk = lpP!=null?(lpP>=80?true:lpP>=40?"warn":false):null;
+  const t1 = d.holders?.top1Percent;
+  const t1Ok = t1!=null?(t1<10?true:t1<30?"warn":false):null;
+
+  html += `<div class="g3">
+    ${makePill("Holders", d.token?.holders?.toLocaleString()||"—", null)}
+    ${makePill("Buy Tax", d.contract?.buyTax??"—", buyOk)}
+    ${makePill("Sell Tax", d.contract?.sellTax??"—", sellOk)}
+    ${makePill("LP Locked", d.liquidity?.lpLocked??"—", lpOk)}
+    ${makePill("Топ-1 холдер", t1!=null?t1+"%":"—", t1Ok)}
+    ${makePill("Сожжено", d.holders?.burnedPercent!=null?d.holders.burnedPercent+"%":"—", d.holders?.burnedPercent>0?true:null)}
+  </div>`;
+
+  // Risks
+  if (d.risks?.length) {
+    html += `<div class="card"><div class="card-title">Факторы риска</div>`;
+    d.risks.forEach(r => {
+      const rc = getRiskColor(r.level);
+      html += `<div class="risk-row" style="background:${rc}10;border-left-color:${rc}">
+        <span style="font-size:15px;flex-shrink:0">${getRiskIcon(r.level)}</span>
+        <div><div class="risk-title">${r.title}</div><div class="risk-desc">${r.description}</div></div>
+      </div>`;
+    });
+    html += `</div>`;
+  }
+
+  // Contract
+  html += `<div class="card"><div class="card-title">Безопасность контракта</div>`;
+  html += makeCheck(d.contract?.verified, "Код верифицирован", "Исходный код опубликован и проверен");
+  html += makeCheck(d.contract?.hasProxy===false?true:d.contract?.hasProxy===true?false:null, "Нет proxy", "Логику контракта нельзя изменить");
+  html += makeCheck(d.contract?.hasMintFunction===false?true:d.contract?.hasMintFunction===true?false:null, "Нет mint function", "Нельзя выпустить новые токены");
+  html += makeCheck(d.contract?.isHoneypot===false?true:d.contract?.isHoneypot===true?false:null, `Не honeypot (buy ${d.contract?.buyTax??"?"} / sell ${d.contract?.sellTax??"?"})`, "Продажа токенов не заблокирована");
+  html += makeCheck(d.contract?.hasBlacklist===false?true:d.contract?.hasBlacklist===true?false:null, "Нет blacklist", "Адреса нельзя заблокировать");
+  html += makeCheck(d.contract?.selfDestructable===false?true:d.contract?.selfDestructable===true?false:null, "Нет self-destruct", "Контракт нельзя уничтожить");
+  if (d.contract?.ownerHoldings!=null) {
+    const ov = parseFloat(d.contract.ownerHoldings);
+    html += makeCheck(ov<5?true:ov<15?null:false, `Owner Holdings: ${d.contract.ownerHoldings}`, "Доля токенов у владельца");
+  }
+  html += `</div>`;
+
+  // Liquidity
+  html += `<div class="card"><div class="card-title">Ликвидность</div>`;
+  if (lpP!=null) {
+    const lc = lpP>=80?"#22c55e":lpP>=40?"#eab308":"#ef4444";
+    html += makeBar("LP Locked", lpP, lc);
+  }
+  html += `<div class="g2" style="margin-top:10px">
+    ${makePill("Общая ликвидность", d.liquidity?.totalUSD??"—", null)}
+    ${makePill("LP провайдеры", d.liquidity?.lpProviders??"—", d.liquidity?.lpProviders>5?true:d.liquidity?.lpProviders>1?"warn":false)}
+    ${makePill("Основная DEX", d.liquidity?.mainDex??"—", null)}
+    ${makePill("Риск rug pull", d.liquidity?.rugPullRisk??"—", d.liquidity?.rugPullRisk==="low"?true:d.liquidity?.rugPullRisk==="medium"?"warn":d.liquidity?.rugPullRisk?false:null)}
+  </div></div>`;
+
+  // Holders
+  if (d.holders) {
+    html += `<div class="card"><div class="card-title">Концентрация холдеров</div>`;
+    if (d.holders.top10Percent!=null) {
+      const hc = d.holders.top10Percent<30?"#22c55e":d.holders.top10Percent<60?"#eab308":"#ef4444";
+      html += makeBar("Топ-10 суммарно", d.holders.top10Percent, hc);
+    }
+    if (d.holders.top10List?.length) {
+      html += `<div style="margin-top:10px">`;
+      d.holders.top10List.slice(0,8).forEach((h,i) => {
+        const pc = h.percent>20?"#ef4444":h.percent>5?"#eab308":"rgba(255,255,255,0.45)";
+        html += `<div class="holder-row">
+          <div style="display:flex;align-items:center;gap:8px">
+            <span style="font-size:10px;color:rgba(255,255,255,0.2);width:18px">#${i+1}</span>
+            <span style="font-family:'Space Mono',monospace;font-size:12px;color:rgba(255,255,255,0.55)">${h.address}</span>
+            ${h.label?`<span style="font-size:10px;background:rgba(255,255,255,0.06);padding:2px 6px;border-radius:4px;color:rgba(255,255,255,0.35)">${h.label}</span>`:""}
+          </div>
+          <span style="font-family:'Space Mono',monospace;font-size:12px;font-weight:600;color:${pc}">${h.percent}%</span>
+        </div>`;
+      });
+      html += `</div>`;
+    }
+    html += `</div>`;
+  }
+
+  // Trading
+  if (d.trading && (d.trading.washTradingDetected || d.trading.suspiciousPatterns?.length)) {
+    html += `<div class="card" style="border-color:rgba(239,68,68,0.2);background:rgba(239,68,68,0.04)">
+      <div class="card-title">Торговые паттерны</div>`;
+    if (d.trading.washTradingDetected) html += `<div style="font-size:13px;color:#ef4444;margin-bottom:8px">🚩 Обнаружен wash trading</div>`;
+    if (d.trading.volumeToMcapRatio!=null) html += `<div style="font-size:12px;color:rgba(255,255,255,0.4);margin-bottom:8px">Volume/MCap: ${d.trading.volumeToMcapRatio}x ${d.trading.volumeToMcapRatio>3?"⚠️ подозрительно":""}</div>`;
+    (d.trading.suspiciousPatterns||[]).forEach(p => {
+      html += `<div style="font-size:12px;color:rgba(255,255,255,0.45);padding:4px 0;border-bottom:1px solid rgba(255,255,255,0.04)">· ${p}</div>`;
+    });
+    html += `</div>`;
+  }
+
+  // Social
+  const soc = d.social;
+  if (soc && (soc.website||soc.twitter||soc.telegram||soc.recentNews?.length)) {
+    html += `<div class="card"><div class="card-title">Социальное присутствие</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:${soc.recentNews?.length?12:0}px">
+        ${soc.website?`<a href="${soc.website}" class="soc-link" target="_blank">🌐 Сайт</a>`:""}
+        ${soc.twitter?`<a href="${soc.twitter}" class="soc-link" target="_blank">𝕏 Twitter</a>`:""}
+        ${soc.telegram?`<a href="${soc.telegram}" class="soc-link" target="_blank">✈️ Telegram</a>`:""}
+      </div>`;
+    (soc.recentNews||[]).forEach(n => {
+      html += `<div style="font-size:12px;color:rgba(255,255,255,0.4);padding:5px 0;border-bottom:1px solid rgba(255,255,255,0.04);line-height:1.5">· ${n}</div>`;
+    });
+    html += `</div>`;
+  }
+
+  if (d.dataSource) html += `<div class="foot-note">Источники: ${d.dataSource}${d.dataFreshness?" · "+d.dataFreshness:""}</div>`;
+  html += `<div class="foot-note" style="margin-top:4px">✦ Анализ выполнен Google Gemini AI · Не является финансовой рекомендацией</div>`;
+  return html;
+}
+
+async function analyze() {
+  const addr = document.getElementById("addrInput").value.trim();
+  if (!addr) return;
+
+  if (!apiKey) {
+    document.getElementById("errorText").innerHTML = "⚠️ Введи Google Gemini API ключ выше.<br>Получить бесплатно: <a href='https://aistudio.google.com' target='_blank'>aistudio.google.com</a>";
+    document.getElementById("errorBlock").classList.remove("hidden");
+    return;
+  }
+
+  const btn = document.getElementById("analyzeBtn");
+  btn.disabled = true;
+  document.getElementById("placeholder").classList.add("hidden");
+  document.getElementById("errorBlock").classList.add("hidden");
+  document.getElementById("results").classList.add("hidden");
+  document.getElementById("loadingBlock").classList.remove("hidden");
+
+  let msgIdx = 0;
+  const msgEl = document.getElementById("loadingMsg");
+  msgEl.textContent = LOADING_MSGS[0];
+  loadingInterval = setInterval(() => {
+    msgIdx = (msgIdx+1) % LOADING_MSGS.length;
+    msgEl.textContent = LOADING_MSGS[msgIdx];
+  }, 2200);
+
+  const netLabel = NETWORKS.find(n => n.id===selectedNet)?.label || selectedNet;
+  const userPrompt = `Проанализируй токен с адресом: ${addr}\nСеть: ${netLabel==="Авто"?"определи автоматически по формату адреса":netLabel}\n\nИщи данные на DexScreener, GoPlus, Token Sniffer, Etherscan/Solscan и верни JSON-анализ.`;
+
+  try {
+    const res = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          system_instruction: { parts: [{ text: SYSTEM_PROMPT }] },
+          contents: [{ role: "user", parts: [{ text: userPrompt }] }],
+          tools: [{ google_search: {} }],
+          generationConfig: { temperature: 0.1, maxOutputTokens: 4000 }
+        })
+      }
+    );
+
+    const json = await res.json();
+
+    if (json.error) {
+      throw new Error(json.error.message || "Ошибка Gemini API");
+    }
+
+    let raw = "";
+    const parts = json.candidates?.[0]?.content?.parts || [];
+    for (const p of parts) {
+      if (p.text) raw += p.text;
+    }
+    raw = raw.replace(/```json|```/g,"").trim();
+
+    // Extract JSON from response
+    const jsonMatch = raw.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) throw new Error("Не удалось извлечь данные из ответа AI");
+
+    const parsed = JSON.parse(jsonMatch[0]);
+    clearInterval(loadingInterval);
+    document.getElementById("loadingBlock").classList.add("hidden");
+
+    if (parsed.error) {
+      document.getElementById("errorText").textContent = "⚠️ " + parsed.error;
+      document.getElementById("errorBlock").classList.remove("hidden");
+    } else {
+      const resDiv = document.getElementById("results");
+      resDiv.innerHTML = renderResults(parsed);
+      resDiv.classList.remove("hidden");
+    }
+  } catch(e) {
+    clearInterval(loadingInterval);
+    document.getElementById("loadingBlock").classList.add("hidden");
+    let msg = "⚠️ Ошибка: " + e.message;
+    if (e.message.includes("API_KEY") || e.message.includes("401")) {
+      msg = "⚠️ Неверный API ключ. Проверь ключ на aistudio.google.com";
+    }
+    document.getElementById("errorText").innerHTML = msg;
+    document.getElementById("errorBlock").classList.remove("hidden");
+  } finally {
+    btn.disabled = false;
+  }
+}
+</script>
+</body>
+</html>
