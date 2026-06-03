@@ -92,7 +92,7 @@
     <div class="logo">
       <span class="logo-text" style="font-family:'Space Mono',monospace">TOKEN<span class="logo-dim">_</span>SCAN</span>
       <span class="logo-tag">v3.0</span>
-      <span class="gemini-badge">✦ Gemini AI</span>
+      <span class="gemini-badge">✦ OpenRouter AI</span>
     </div>
     <p class="sub">Полный AI-анализ безопасности токена · Бесплатно</p>
   </div>
@@ -100,12 +100,12 @@
   <!-- Key setup -->
   <div id="keySetupBlock" class="pad" style="margin-bottom:16px">
     <div class="card" style="border-color:rgba(66,133,244,0.2);background:rgba(66,133,244,0.05)">
-      <div class="card-title" style="color:rgba(66,133,244,0.7)">🔑 Настройка Google Gemini API (бесплатно)</div>
+      <div class="card-title" style="color:rgba(66,133,244,0.7)">🔑 Настройка OpenRouter API (бесплатно)</div>
       <ul class="step-list">
-        <li>Зайди на <a href="https://aistudio.google.com" target="_blank">aistudio.google.com</a></li>
-        <li>Войди через Google аккаунт</li>
-        <li>Нажми <strong>Get API Key → Create API key</strong></li>
-        <li>Скопируй ключ (начинается с <code style="color:#4285f4">AIzaSy...</code>)</li>
+        <li>Зайди на <a href="https://openrouter.ai" target="_blank">openrouter.ai</a></li>
+        <li>Нажми <strong>Sign In</strong> → войди через Google</li>
+        <li>Сверху нажми <strong>Keys → Create Key</strong></li>
+        <li>Скопируй ключ (начинается с <code style="color:#4285f4">sk-or-...</code>)</li>
         <li>Вставь ниже и нажми <strong>Сохранить</strong></li>
       </ul>
     </div>
@@ -113,7 +113,7 @@
 
   <!-- API Key input -->
   <div class="key-wrap">
-    <input class="ta-input" id="apiKeyInput" placeholder="AIzaSy... (Google Gemini API Key)" type="password" autocomplete="off">
+    <input class="ta-input" id="apiKeyInput" placeholder="sk-or-... (OpenRouter API Key)" type="password" autocomplete="off">
     <button class="save-btn" onclick="saveKey()">Сохранить</button>
   </div>
   <div class="key-status" id="keyStatus"></div>
@@ -139,7 +139,7 @@
     <div id="results" class="hidden fade-in"></div>
     <div id="placeholder" class="placeholder">
       <div class="placeholder-icon">⬡</div>
-      <div class="placeholder-text">Введи Gemini API ключ, затем адрес токена.<br>AI найдёт данные и сделает полный разбор бесплатно.</div>
+      <div class="placeholder-text">Введи OpenRouter API ключ, затем адрес токена.<br>AI сделает полный разбор бесплатно.</div>
     </div>
   </div>
 </div>
@@ -166,7 +166,7 @@ const LOADING_MSGS = [
   "Анализирую холдеров...",
   "Проверяю ликвидность...",
   "Сканирую паттерны торговли...",
-  "Gemini AI анализирует токен...",
+  "AI анализирует токен...",
   "Формирую отчёт...",
 ];
 
@@ -223,7 +223,7 @@ RAW JSON ONLY.`;
 
 let selectedNet = "auto";
 let loadingInterval = null;
-let apiKey = localStorage.getItem("gemini_api_key") || "";
+let apiKey = localStorage.getItem("openrouter_api_key") || "";
 
 // Build network buttons
 const netContainer = document.getElementById("networks");
@@ -247,7 +247,7 @@ function saveKey() {
   const val = document.getElementById("apiKeyInput").value.trim();
   if (!val) return;
   apiKey = val;
-  localStorage.setItem("gemini_api_key", val);
+  localStorage.setItem("openrouter_api_key", val);
   document.getElementById("apiKeyInput").value = "";
   setKeyStatus("✓ API ключ сохранён — можно анализировать!", "#22c55e");
   document.getElementById("keySetupBlock").classList.add("hidden");
@@ -261,10 +261,10 @@ function setKeyStatus(msg, color) {
 
 window.addEventListener("DOMContentLoaded", () => {
   if (apiKey) {
-    setKeyStatus("✓ Gemini API ключ загружен · готов к работе", "#22c55e");
+    setKeyStatus("✓ OpenRouter API ключ загружен · готов к работе", "#22c55e");
     document.getElementById("keySetupBlock").classList.add("hidden");
   } else {
-    setKeyStatus("Введи API ключ с aistudio.google.com", "rgba(255,255,255,0.3)");
+    setKeyStatus("Введи API ключ с openrouter.ai", "rgba(255,255,255,0.3)");
   }
 });
 
@@ -456,7 +456,7 @@ function renderResults(d) {
   }
 
   if (d.dataSource) html += `<div class="foot-note">Источники: ${d.dataSource}${d.dataFreshness?" · "+d.dataFreshness:""}</div>`;
-  html += `<div class="foot-note" style="margin-top:4px">✦ Анализ выполнен Google Gemini AI · Не является финансовой рекомендацией</div>`;
+  html += `<div class="foot-note" style="margin-top:4px">✦ Анализ выполнен OpenRouter AI · Не является финансовой рекомендацией</div>`;
   return html;
 }
 
@@ -465,7 +465,7 @@ async function analyze() {
   if (!addr) return;
 
   if (!apiKey) {
-    document.getElementById("errorText").innerHTML = "⚠️ Введи Google Gemini API ключ выше.<br>Получить бесплатно: <a href='https://aistudio.google.com' target='_blank'>aistudio.google.com</a>";
+    document.getElementById("errorText").innerHTML = "⚠️ Введи OpenRouter API ключ выше.<br>Получить бесплатно: <a href='https://openrouter.ai' target='_blank'>openrouter.ai</a>";
     document.getElementById("errorBlock").classList.remove("hidden");
     return;
   }
@@ -489,30 +489,35 @@ async function analyze() {
   const userPrompt = `Проанализируй токен с адресом: ${addr}\nСеть: ${netLabel==="Авто"?"определи автоматически по формату адреса":netLabel}\n\nИщи данные на DexScreener, GoPlus, Token Sniffer, Etherscan/Solscan и верни JSON-анализ.`;
 
   try {
-    const res = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          system_instruction: { parts: [{ text: SYSTEM_PROMPT }] },
-          contents: [{ role: "user", parts: [{ text: userPrompt }] }],
-          // no tools on free tier
-          generationConfig: { temperature: 0.1, maxOutputTokens: 4000 }
-        })
-      }
-    );
+    const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${apiKey}`,
+        "HTTP-Referer": "https://token-scan-pi.vercel.app",
+        "X-Title": "TOKEN_SCAN"
+      },
+      body: JSON.stringify({
+        model: "deepseek/deepseek-chat-v3-0324:free",
+        messages: [
+          { role: "system", content: SYSTEM_PROMPT },
+          { role: "user", content: userPrompt }
+        ],
+        temperature: 0.1,
+        max_tokens: 4000
+      })
+    });
 
     const json = await res.json();
 
     if (json.error) {
-      throw new Error(json.error.message || "Ошибка Gemini API");
+      throw new Error(json.error.message || "Ошибка OpenRouter API");
     }
 
     let raw = "";
-    const parts = json.candidates?.[0]?.content?.parts || [];
+    const parts = [json.choices?.[0]?.message];
     for (const p of parts) {
-      if (p.text) raw += p.text;
+      if (p?.content) raw += p.content;
     }
     raw = raw.replace(/```json|```/g,"").trim();
 
@@ -536,8 +541,8 @@ async function analyze() {
     clearInterval(loadingInterval);
     document.getElementById("loadingBlock").classList.add("hidden");
     let msg = "⚠️ Ошибка: " + e.message;
-    if (e.message.includes("API_KEY") || e.message.includes("401")) {
-      msg = "⚠️ Неверный API ключ. Проверь ключ на aistudio.google.com";
+    if (e.message.includes("API_KEY") || e.message.includes("401") || e.message.includes("auth")) {
+      msg = "⚠️ Неверный API ключ. Проверь ключ на openrouter.ai";
     }
     document.getElementById("errorText").innerHTML = msg;
     document.getElementById("errorBlock").classList.remove("hidden");
